@@ -1,8 +1,8 @@
 # Author : Massoud Ibrahim
 # Date 2024-06-04
-# In truth, I was challenged to bring chat GPT into a discord server channel.
+# In truth, I was challenged to bring chat GPT into a discord server channel with cats enthousiasts.
 # The goal was to allow the server members to be able to have a chat with the bot and have fun.
-# The bot will work in multiple servers and it's possible to be used by multiple users at the same time.
+# The bot can work in multiple servers and can be used by multiple users at the same time.
 # https://github.com/openai/openai-python/discussions/742 used this website to update the api
 
 import discord
@@ -25,6 +25,7 @@ client = discord.Client(intents=intents)
 
 conversations = {}
 
+# If you have specific users that you want to greet with a unique way
 greetings = {
     "user1": "Hello! How can I assist you today dear Meowster? <:catgun:1158210278828281916>",
     "user2": "Hello! How can I assist you today dear Royal Mai's Kitty? <a:whitekit:1158210827690709113>",
@@ -36,13 +37,17 @@ default_greeting = "Hello! How can I assist you today dear Meow? <a:yayy:1158210
 logging.basicConfig(level=logging.INFO)
 
 async def end_conversation(user_id, guild_id, channel):
-    await asyncio.sleep(60)
+    await asyncio.sleep(120)
     if (user_id, guild_id) in conversations:
         last_interaction_time = conversations[(user_id, guild_id)]['last_interaction']
-        if datetime.utcnow() - last_interaction_time >= timedelta(minutes=1):
+        if datetime.utcnow() - last_interaction_time >= timedelta(minutes=2):
             del conversations[(user_id, guild_id)]
             await channel.send("Ending conversation due to inactivity <:cat_evil:1158210003501596713>")
             logging.info(f"Ended conversation with {user_id} in guild {guild_id} due to inactivity.")
+
+async def typing_animation(thinking_message):
+    thinking_image_url = "https://tenor.com/view/cargando-gif-10528529653265737070"
+    await thinking_message.edit(content=thinking_image_url)
 
 @client.event
 async def on_message(message):
@@ -76,13 +81,16 @@ async def on_message(message):
             return
 
         try:
+            thinking_message = await channel.send("...")
+            await typing_animation(thinking_message)
+
             response = await openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": message.content}]
             )
-            model_used = response.model
+
             reply_content = response.choices[0].message.content.strip()
-            await channel.send(reply_content)
+            await thinking_message.edit(content=reply_content)
             logging.info(f"Sent response to user {user_name} in channel {channel} of guild {guild_id}.")
             asyncio.create_task(end_conversation(user_id, guild_id, channel))
         except Exception as e:
