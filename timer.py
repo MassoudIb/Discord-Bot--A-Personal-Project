@@ -15,18 +15,16 @@ class Timer:
                 await channel.send("Ending conversation due to inactivity <:cat_evil:1158210003501596713>")
                 logging.info(f"Ended conversation with {user_id} in guild {guild_id} due to inactivity.")
 
-    async def countdown(self, channel, seconds):
+    async def countdown(self, channel, seconds, message):
         hourglass_emoji = ':hourglass_flowing_sand:'
-        word_emojis = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:', ':zero:']
+        numbers_emojis = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:', ':zero:']
 
-        message = await channel.send(f"{hourglass_emoji} Countdown: {seconds} seconds")
         for i in range(seconds, 0, -1):
             remaining_time = f"{hourglass_emoji} "
             for digit in str(i):
                 if digit.isdigit():
                     emoji_index = int(digit) - 1
-                    remaining_time += word_emojis[emoji_index]
+                    remaining_time += numbers_emojis[emoji_index]
             await asyncio.sleep(1)
             await message.edit(content=remaining_time)
-        await message.edit(content=f"# :hourglass: Countdown finished!")
-
+        await message.edit(content=f":hourglass: Countdown finished!")

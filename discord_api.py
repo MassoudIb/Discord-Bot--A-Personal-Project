@@ -10,98 +10,96 @@ import os
 import asyncio
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime
+from discord.ext import commands
 from timer import Timer
 import logging
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+GUILD_ID = int(os.getenv('GUILD_ID'))
 
-class ChatBot:
-    def __init__(self):
-        intents = discord.Intents.default()
-        intents.message_content = True
-        self.client = discord.Client(intents=intents)
-        self.timer = Timer()
-        self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        self.greetings = {
-            "user1": "Hello! How can I assist you today dear Meowster? <:catgun:1158210278828281916>",
-            "user2": "Hello! How can I assist you today dear Royal Mai's Kitty? <a:whitekit:1158210827690709113>",
-            "user3": "Hello! How can I assist you today dear Queen Mommy Meow? <a:whitekit:1158210827690709113>"
-        }
-        self.default_greeting = "Hello! How can I assist you today dear Meow? <a:yayy:1158210895097380946>"
 
-        logging.basicConfig(level=logging.INFO)
+intents = discord.Intents.default()
+intents.message_content = True
 
-        @self.client.event
-        async def on_ready():
-            print('Logged on as', self.client.user)
+bot = commands.Bot("!", intents=intents)
+timer = Timer()
+openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-        @self.client.event
-        async def on_message(message):
-            await self.handle_message(message)
+jumping_cat = "<a:yayy:1158210895097380946>"
+greetings = {
+    "user1": f"Hello! How can I assist you today dear Meowster? {jumping_cat}",
+    "user2": f"Hello! How can I assist you today dear Royal Mai's Kitty? {jumping_cat}",
+    "user3": f"Hello! How can I assist you today dear Queen Mommy Meow? {jumping_cat}"
+}
+default_greeting = f"Hello! How can I assist you today dear Meow? {jumping_cat}"
 
-    async def typing_animation(self, thinking_message):
-        thinking_image_url = "https://tenor.com/view/cargando-gif-10528529653265737070"
-        await thinking_message.edit(content=thinking_image_url)
+logging.basicConfig(level=logging.INFO)
 
-    async def handle_message(self, message):
-        if message.author == self.client.user:
+# Event that runs when the bot is ready and connected to Discord.
+@bot.event
+async def on_ready():
+    print(f"Bot Ready: {bot.user}")
+
+# Just an example of how a slash command works in discord
+@bot.slash_command(name="ping", description="Ping command")
+async def _ping(ctx):
+    await ctx.send("pong")  # Responds with "pong" when the /ping command is used.
+
+@bot.slash_command(name="countdown", description="Start a countdown timer.")
+async def countdown_command(ctx, seconds: int):
+    await ctx.defer() # will give more time for processing
+    message = await ctx.followup.send(f"Starting countdown for {seconds} seconds...")
+    await timer.countdown(ctx.channel, seconds, message)
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    user_id = message.author.id
+    guild_id = message.guild.id
+    user_name = str(message.author.name)
+    channel = message.channel
+
+    if message.content.lower().startswith('hello'):
+        timer.conversations[(user_id, guild_id)] = {'last_interaction': datetime.utcnow()}
+        await channel.send(greetings.get(user_name, default_greeting))
+        logging.info(f"Greeted user {user_name} in channel {channel} of guild {guild_id}.")
+        asyncio.create_task(timer.end_conversation(user_id, guild_id, channel))
+        return
+
+    if (user_id, guild_id) in timer.conversations:
+        timer.conversations[(user_id, guild_id)]['last_interaction'] = datetime.utcnow()
+        if message.content.lower() == 'thank you':
+            del timer.conversations[(user_id, guild_id)]
+            await channel.send("You're welcome! Have a great day!")
+            logging.info(f"Ended conversation with {user_name} in guild {guild_id}.")
             return
 
-        user_id = message.author.id
-        guild_id = message.guild.id
-        user_name = str(message.author)
-        channel = message.channel
+        try:
+            thinking_message = await channel.send("...")
+            asyncio.create_task(typing_animation(thinking_message))
 
-        if message.content.lower().startswith('hello'):
-            self.timer.conversations[(user_id, guild_id)] = {'last_interaction': datetime.utcnow()}
-            greeting = self.greetings.get(user_name, self.default_greeting)
-            await channel.send(greeting)
-            logging.info(f"Greeted user {user_name} in channel {channel} of guild {guild_id}.")
-            asyncio.create_task(self.timer.end_conversation(user_id, guild_id, channel))
-            return
+            response = await openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": message.content}]
+            )
 
-        if (user_id, guild_id) in self.timer.conversations:
-            self.timer.conversations[(user_id, guild_id)]['last_interaction'] = datetime.utcnow()
-            if message.content.lower() == 'thank you':
-                del self.timer.conversations[(user_id, guild_id)]
-                await channel.send("You're welcome! Have a great day!")
-                logging.info(f"Ended conversation with {user_name} in guild {guild_id}.")
-                return
+            reply_content = response.choices[0].message.content.strip()
+            await thinking_message.edit(content=reply_content)
+            logging.info(f"Sent response to user {user_name} in channel {channel} of guild {guild_id}.")
+            asyncio.create_task(timer.end_conversation(user_id, guild_id, channel))
+        except Exception as e:
+            await channel.send(f"Error: {e}")
+            logging.error(f"Error processing message from user {user_name} in channel {channel} of guild {guild_id}: {e}")
 
-            if message.content.lower().startswith('/countdown'):
-                try:
-                    seconds = int(message.content.split()[1])
-                    asyncio.create_task(self.timer.countdown(channel, seconds))
-                except (IndexError, ValueError):
-                    await channel.send("Please provide the number of seconds for the countdown, e.g., /countdown 10")
-                return
+    await bot.process_commands(message)
 
-            try:
-                self.thinking_done = False
-                thinking_message = await channel.send("...")
-                asyncio.create_task(self.typing_animation(thinking_message))
+async def typing_animation(thinking_message):
+    thinking_image_url = "https://tenor.com/view/cargando-gif-10528529653265737070"
+    await thinking_message.edit(content=thinking_image_url)
 
-                response = await self.openai_client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": message.content}]
-                )
-
-                self.thinking_done = True
-                reply_content = response.choices[0].message.content.strip()
-                await thinking_message.edit(content=reply_content)
-                logging.info(f"Sent response to user {user_name} in channel {channel} of guild {guild_id}.")
-                asyncio.create_task(self.timer.end_conversation(user_id, guild_id, channel))
-            except Exception as e:
-                await channel.send(f"Error: {e}")
-                logging.error(
-                    f"Error processing message from user {user_name} in channel {channel} of guild {guild_id}: {e}")
-
-    def run(self):
-        self.client.run(DISCORD_TOKEN)
-
-if __name__ == "__main__":
-    chat_bot = ChatBot()
-    chat_bot.run()
+bot.run(DISCORD_TOKEN)
