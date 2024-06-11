@@ -15,6 +15,9 @@ from discord.ext import commands
 from timer import Timer
 from weather import get_weather
 from calculator import eval_expression
+from dalle import generate_image
+from translate import translate, transcribe
+from discord.sinks import MP3Sink
 import music
 import logging
 
@@ -22,7 +25,6 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GUILD_ID = int(os.getenv('GUILD_ID'))
-
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -32,6 +34,7 @@ timer = Timer()
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 conversation_history = {}
+recordings = {}
 
 # That's the way this specific emoji is defined in our discord server
 jumping_cat = "<a:yayy:1158210895097380946>"
@@ -50,7 +53,6 @@ def trim_conversation_history(history, max_length=4096):
         total_length -= len(history.pop(0)['content'])
 
 
-# Event that runs when the bot is ready and connected to Discord.
 @bot.event
 async def on_ready():
     print(f"Bot Ready: {bot.user}")
@@ -60,18 +62,19 @@ async def on_ready():
 # async def _ping(ctx):
 #     await ctx.send("pong")  # Responds with "pong" when the /ping command is used.
 
-@bot.command(name='calc', help='Evaluates a mathematical expression. Usage: !calc <expression>')
-async def calc(ctx, *, expression: str):
+@bot.slash_command(name='calc', description="Evaluates a mathematical expression. Usage: /calc <expression>")
+async def calc_command(ctx, *, expression: str):
+    await ctx.defer()  # will give more time for processing
     result = eval_expression(expression)
     embed = discord.Embed(
         description= f"The result of `{expression}` is {result}",
         color=0x89CFF0
     )
-    await ctx.send(embed=embed)
+    await ctx.followup.send(embed=embed)
 
 @bot.slash_command(name="countdown", description="Start a countdown timer.")
 async def countdown_command(ctx, seconds: int):
-    await ctx.defer() # will give more time for processing
+    await ctx.defer()
     message = await ctx.followup.send(f"Starting countdown for {seconds} seconds...")
     await timer.countdown(ctx, seconds, message)
 
@@ -91,6 +94,73 @@ async def weather_command(ctx, city: str):
     else:
         await ctx.followup.send(f"Could not retrieve weather information for {city}. Please check the city name and try again.")
 
+@bot.slash_command(name="draw", description="Generate an image using /draw <prompt>.")
+async def draw(interaction: discord.Interaction, prompt: str):
+    await interaction.response.defer()
+    try:
+        image_url = await generate_image(prompt)
+        embed = discord.Embed(title="Generated Image", description=prompt, color=0x00FF00)
+        embed.set_image(url=image_url)
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"An error occurred: {e}")
+
+@bot.command(name="join", help="Join a voice channel")
+async def join(ctx):
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        await channel.connect()
+    else:
+        await ctx.send(f"You are not connected to a voice channel {jumping_cat}")
+
+@bot.command(name="leave", help="Leave a voice channel")
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.guild.voice_client.disconnect()
+    else:
+        await ctx.send(f"I am not in a voice channel {jumping_cat}")
+
+@bot.command(name="record", help="Record audio from the voice channel")
+async def record(ctx):
+    if ctx.voice_client:
+        vc = ctx.voice_client
+        recordings[ctx.guild.id] = vc
+        vc.start_recording(
+            MP3Sink(), on_record_complete, ctx
+        )
+
+        await ctx.send(f"Recording started! {jumping_cat}")
+    else:
+        await ctx.send(f"I am not in a voice channel {jumping_cat}")
+
+@bot.command(name="stop", help="Stop recording audio from the voice channel")
+async def stop_record(ctx):
+    if ctx.guild.id in recordings:
+        vc = recordings[ctx.guild.id]
+        vc.stop_recording()
+        del recordings[ctx.guild.id]
+        await ctx.send(f"Recording stopped! {jumping_cat}")
+    else:
+        await ctx.send("No active recording found!")
+
+async def on_record_complete(sink, ctx):
+    filename = list(sink.audio_data.keys())[0]
+    audio_path = f"./{filename}.mp3"
+    with open(audio_path, "wb") as f:
+        f.write(sink.audio_data[filename].file.read())
+
+    await ctx.send(f"Processing audio")
+    await ctx.send("<a:work_cat:1249505550497087592>")
+    translation = await translate(audio_path)
+    transcript = await transcribe(audio_path)
+    embed = discord.Embed(
+        title="Translation Audio to English",
+        description=f":loud_sound: : `{transcript}` \n :pencil: : `{translation}`",
+        color=0xFFA500
+    )
+    await ctx.send(embed=embed)
+    # Clean up the audio file
+    os.remove(audio_path)
 
 async def send_embed_response(channel, content, color):
     embed = discord.Embed(description=content, color=color)
@@ -122,7 +192,7 @@ async def on_message(message):
             timer.conversations[user_key]['last_interaction'] = datetime.utcnow()
             if message.content.lower() == 'thank you':
                 del timer.conversations[(user_id, guild_id)]
-                await channel.send("You're welcome! Have a great day!")
+                await channel.send(f"You're welcome! Have a great day! {jumping_cat}")
                 logging.info(f"Ended conversation with {user_name} in guild {guild_id}.")
                 return
 
