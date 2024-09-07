@@ -1,8 +1,8 @@
 
- In truth, I was challenged to bring chatGPT into a discord server channel.
+ I was challenged to bring chatGPT into a discord server channel.
  The goal was to allow the server members to be able to have a chat with the bot and have fun.
  The bot can work in multiple servers and can be used by multiple users simultaneously.
- It's still a work in progress and I plan to deploy it so it can be used in multiple servers!
+ It's still a work in progress.
 
 ---
 > [!IMPORTANT]
