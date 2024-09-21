@@ -27,7 +27,7 @@
 6. Invite your bot to your server via OAuth2 URL Generator
 
 ## Step 2: Running the bot on your desktop locally
-1. Use the command: `python discord_api.py` to run the bot
+1. Use the command: `python main.py` to run the bot
 
 
 ## Step 3: Chatting with the bot in Discord
