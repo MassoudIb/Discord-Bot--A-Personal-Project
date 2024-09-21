@@ -1,9 +1,10 @@
 # Author : Massoud Ibrahim
 # Date 2024-06-04
-# In truth, I was challenged to bring chat GPT into a discord server channel with cats enthousiasts.
+# I was challenged to bring chat GPT into a discord server channel with cats enthousiasts.
 # The goal was to allow the server members to be able to have a chat with the bot and have fun.
 # The bot can work in multiple servers and can be used by multiple users at the same time.
-# https://github.com/openai/openai-python/discussions/742 used this website to update the api
+# https://github.com/openai/openai-python/discussions/742 I used this website to update the api
+# discord_api.py file will handle the commands registration and bot events handling.
 
 import discord
 import os
@@ -17,11 +18,8 @@ from weather import get_weather
 from calculator import eval_expression
 from dalle import generate_image
 from translate import translate, transcribe
-from discord.sinks import MP3Sink
-import music
 import logging
 
-load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GUILD_ID = int(os.getenv('GUILD_ID'))
@@ -56,11 +54,6 @@ def trim_conversation_history(history, max_length=4096):
 @bot.event
 async def on_ready():
     print(f"Bot Ready: {bot.user}")
-
-# Just an example of how a slash command works in discord
-# @bot.slash_command(name="ping", description="Ping command")
-# async def _ping(ctx):
-#     await ctx.send("pong")  # Responds with "pong" when the /ping command is used.
 
 @bot.slash_command(name='calc', description="Evaluates a mathematical expression. Usage: /calc <expression>")
 async def calc_command(ctx, *, expression: str):
@@ -224,4 +217,3 @@ async def typing_animation(thinking_message):
     thinking_image_url = "https://tenor.com/view/cargando-gif-10528529653265737070"
     await thinking_message.edit(content=thinking_image_url)
 
-bot.run(DISCORD_TOKEN)

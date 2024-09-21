@@ -1,3 +1,7 @@
+# Author : Massoud Ibrahim
+# Date 2024-06-04
+# dalle.py file has the functions required for /draw command.
+
 from openai import OpenAI
 
 client = OpenAI()

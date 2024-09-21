@@ -1,3 +1,7 @@
+# Author : Massoud Ibrahim
+# Date 2024-06-04
+# weather.py file has the functions required for /weather command.
+
 #pip install pytz
 # https://timeapi.io/ used this for the Swagger
 import aiohttp

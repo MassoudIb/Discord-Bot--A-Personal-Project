@@ -1,3 +1,7 @@
+# Author : Massoud Ibrahim
+# Date 2024-06-04
+# timer.py file has the functions required for /countdown command.
+
 import asyncio
 from datetime import datetime, timedelta
 import logging

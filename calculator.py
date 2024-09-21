@@ -1,3 +1,7 @@
+# Author : Massoud Ibrahim
+# Date 2024-06-04
+# calculator.py file has the function required for /calc command.
+
 import math
 
 allowed_operations = {
