@@ -30,3 +30,15 @@
 ## Step 3: Chatting with the bot in discord
 1. Use the command: `hello` to start a chat
 2. Use the command: `thank you` to end the chat
+
+## Step 4: Using the Slash Commands
+1. Use the command: `/Weather <city> ` to get the weather info of any city worldwide
+2. Use the command: `/calc <expression>` to evaluate a mathematical expression
+3. Use the command: `/countdown <number in seconds>` to start a timer
+4. Use the command: `/draw <prompt>` to get an 1024x1024 image corresponding to your prompt
+
+## Step 5: Record conversations and translate from any language to English!
+1. Use the command: `!join` for the bot to join the Voice Channel you are connected to.
+2. Use the command: `!record` for the bot to start recording you.
+3. Use the command: `!stop` for the bot to stop recording and process the audio.
+4. Use the command: `!leave` for the bot to leave the Voice Chat.
