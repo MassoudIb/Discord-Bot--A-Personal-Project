@@ -4,6 +4,9 @@
  The bot can work in multiple servers and can be used by multiple users simultaneously.
  It's still a work in progress.
 
+### Chatting with the bot
+![image](https://github.com/MassoudIb/Discord-Bot--A-Personal-Project/blob/7c3b6c1fb2c933a92df331df10f5d45f1cbce31f/GIFS/hello_Conversation.gif)
+
 ---
 > [!IMPORTANT]
 > **I used this website to update the api:**
@@ -36,6 +39,9 @@
 2. Use the command: `/calc <expression>` to evaluate a mathematical expression
 3. Use the command: `/countdown <number in seconds>` to start a timer
 4. Use the command: `/draw <prompt>` to get an 1024x1024 image corresponding to your prompt
+
+### Example Using Draw Command
+![image](https://github.com/MassoudIb/Discord-Bot--A-Personal-Project/blob/7c3b6c1fb2c933a92df331df10f5d45f1cbce31f/GIFS/cat_drawing.gif)
 
 ## Step 5: Record Conversations and Translate from Any Language to English
 1. Use the command: `!join` for the bot to join the Voice Channel you are connected to.
