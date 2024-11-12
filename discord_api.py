@@ -35,7 +35,7 @@ conversation_history = {}
 recordings = {}
 
 # That's the way this specific emoji is defined in our discord server
-jumping_cat = "<a:yayy:1158210895097380946>"
+jumping_cat = "<a:yayy:xyz>"
 greetings = {
     "user1": f"Hello! How can I assist you today dear Meowster? {jumping_cat}",
     "user2": f"Hello! How can I assist you today dear Royal Mai's Kitty? {jumping_cat}",
@@ -143,7 +143,7 @@ async def on_record_complete(sink, ctx):
         f.write(sink.audio_data[filename].file.read())
 
     await ctx.send(f"Processing audio")
-    await ctx.send("<a:work_cat:1249505550497087592>")
+    await ctx.send("<a:work_cat:xyz>")
     translation = await translate(audio_path)
     transcript = await transcribe(audio_path)
     embed = discord.Embed(

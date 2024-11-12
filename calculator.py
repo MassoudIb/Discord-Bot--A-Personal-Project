@@ -6,7 +6,7 @@ import math
 
 allowed_operations = {
     'math': math,
-    '__builtins__': {},   # disallow all built-ins
+    '__builtins__': {},
     'abs': abs,
     'round': round,
     'sqrt': math.sqrt,

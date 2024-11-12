@@ -16,7 +16,7 @@ class Timer:
             last_interaction_time = self.conversations[(user_id, guild_id)]['last_interaction']
             if datetime.utcnow() - last_interaction_time >= timedelta(minutes=3):
                 del self.conversations[(user_id, guild_id)]
-                await channel.send("Ending conversation due to inactivity <:cat_evil:1158210003501596713>")
+                await channel.send("Ending conversation due to inactivity <:cat_evil:xyz>")
                 logging.info(f"Ended conversation with {user_id} in guild {guild_id} due to inactivity.")
 
     async def countdown(self, channel, seconds, message):
